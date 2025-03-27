@@ -1,9 +1,9 @@
 const words = [
     { word: "Hello", translation: "Привет", example: "Hello, dear!", attempts: 0 },
     { word: "Goodbye", translation: "До свидания", example: "Goodbye, mam.", attempts: 0 },
-    { word: "Сlothes", translation: "Одежда", example: "I bought new clothes.", attempts: 0 },
+    { word: "Clothes", translation: "Одежда", example: "I bought new clothes.", attempts: 0 },
     { word: "Dog", translation: "Собака", example: "The dog is friendly.", attempts: 0 },
-    { word: "Dinner", translation: "Ужин", example: "My dad cooked diner yesterday.", attempts: 0 },
+    { word: "Dinner", translation: "Ужин", example: "My dad cooked dinner yesterday.", attempts: 0 },
     { word: "Brother", translation: "Брат", example: "I have brother.", attempts: 0 },
     { word: "Computer", translation: "Компьютер", example: "I use computer on daily basis.", attempts: 0 },
     { word: "Bag", translation: "Сумка", example: "My bag is very stylish", attempts: 0 },
@@ -28,6 +28,7 @@ const backButton = document.querySelector('#back');
 const examButton = document.querySelector('#exam');
 const studyMode = document.querySelector('#study-mode');
 const examMode = document.querySelector('#exam-mode');
+const studyCards = document.querySelector('.study-cards');
 const examCardsContainer = document.querySelector('#exam-cards');
 const timeElement = document.querySelector('#time');
 const shuffleButton = document.querySelector('#shuffle-words');
@@ -78,6 +79,10 @@ shuffleButton.addEventListener('click', () => {
     updateCard();
     nextButton.disabled = false;
     backButton.disabled = true;
+    document.querySelector('#words-progress').value = 0;
+    if (flipCard.classList.contains('active')) {
+        flipCard.classList.remove('active');
+    }
 });
 
 updateCard();
@@ -108,7 +113,7 @@ const updateExamProgress = () => {
 };
 
 const handleCardClick = (card) => {
-    if (card.classList.contains('correct') || card.classList.contains('wrong')) {
+    if (card.classList.contains('fade-out')) {
         return;
     }
 
@@ -123,24 +128,24 @@ const handleCardClick = (card) => {
             (firstCard.dataset.type === 'word' && card.dataset.type === 'translation' && firstWord === secondWord) ||
             (firstCard.dataset.type === 'translation' && card.dataset.type === 'word' && firstWord === secondWord);
 
-        if (isMatch) {
-            firstCard.classList.add('fade-out');
-            card.classList.add('fade-out');
-            firstCard = null;
-        } else {
             const wordData = words.find((w) => w.word === firstCard.dataset.word || w.translation === firstCard.dataset.word);
             if (wordData) {
                 wordData.attempts++;
             }
 
-            card.classList.add('wrong');
-            setTimeout(() => {
-                card.classList.remove('wrong');
-                firstCard.classList.remove('correct');
+            if (isMatch) {
+                firstCard.classList.add('fade-out');
+                card.classList.add('fade-out');
                 firstCard = null;
-            }, 500);
+            } else {
+                card.classList.add('wrong');
+                setTimeout(() => {
+                    card.classList.remove('wrong');
+                    firstCard.classList.remove('correct');
+                    firstCard = null;
+                }, 500);
+            }
         }
-    }
 
     updateExamProgress();
     const remainingCards = document.querySelectorAll('.card:not(.fade-out)');
@@ -150,12 +155,11 @@ const handleCardClick = (card) => {
     }
 };
 
-const showResults = () => {
+    const showResults = () => {
     const resultsModal = document.querySelector('.results-modal');
     const resultsContent = document.querySelector('.results-content');
     const wordStatsTemplate = document.querySelector('#word-stats');
-    const studyCards = document.querySelector('.study-cards');
-    studyCards.classList.add('hidden');
+
     resultsContent.innerHTML = '';
 
     words.forEach((word) => {
@@ -199,6 +203,7 @@ const startExam = () => {
 
 examButton.addEventListener('click', () => {
     studyMode.classList.add('hidden');
+    studyCards.classList.add('hidden');
     examMode.classList.remove('hidden');
     startExam();
 });
@@ -209,6 +214,15 @@ backButton.addEventListener('click', prevWord);
 document.querySelector('.results-modal').addEventListener('click', (e) => {
     if (e.target === document.querySelector('.results-modal')) {
         document.querySelector('.results-modal').classList.add('hidden');
-        document.querySelector('.study-cards').classList.remove('hidden');
+        studyMode.classList.remove('hidden');
+        studyCards.classList.remove('hidden');
+        examMode.classList.add('hidden');
+
+        currentIndex = 0;
+        updateCard();
+        backButton.disabled = true;
+        nextButton.disabled = false;
+
+        words.forEach(word => word.attempts = 0);
     }
 });
